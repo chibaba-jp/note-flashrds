@@ -1,3 +1,4 @@
+
 const notes = ['c4.png', 'd4.png', 'e4.png', 'f4.png', 'g4.png', 'a4.png', 'b4.png'];
 let totalQuestions = 0;
 let currentQuestion = 0;
@@ -24,11 +25,18 @@ function startQuiz() {
   }
 
   showNextNote();
-  if (isVoiceMode) startVoiceRecognition();
+
+  if (isVoiceMode) {
+    startVoiceRecognition();
+  }
 }
 
 function showNextNote() {
-  if (currentQuestion >= totalQuestions) return showResults();
+  if (currentQuestion >= totalQuestions) {
+    showResults();
+    return;
+  }
+
   const randomNote = notes[Math.floor(Math.random() * notes.length)];
   correctAnswer = randomNote[0];
   correctAnswers.push(correctAnswer);
@@ -51,22 +59,28 @@ function startVoiceRecognition() {
     analyser.fftSize = 2048;
     source.connect(analyser);
     const buffer = new Float32Array(analyser.fftSize);
+    const detectPitch = Pitchfinder.YIN({ sampleRate: audioContext.sampleRate });
+
     function detect() {
       analyser.getFloatTimeDomainData(buffer);
-      const [pitch, clarity] = pitchy(buffer, audioContext.sampleRate);
+      const pitch = detectPitch(buffer);
+
       if (pitch) {
         const note = freqToNoteName(pitch);
         const userNote = note.replace(/[0-9]/g, '').toLowerCase();
         document.getElementById('voice-detected').innerText =
-          `あなたの音: ${note} / clarity: ${clarity.toFixed(2)}`;
-        if (clarity > 0.6) {
-          userAnswers.push(userNote);
-          currentQuestion++;
-          showNextNote();
-        }
+          `あなたの音: ${note}`;
+
+        userAnswers.push(userNote);
+        currentQuestion++;
+        showNextNote();
       }
-      if (currentQuestion < totalQuestions) requestAnimationFrame(detect);
+
+      if (currentQuestion < totalQuestions) {
+        requestAnimationFrame(detect);
+      }
     }
+
     detect();
   });
 }
@@ -82,16 +96,19 @@ function freqToNoteName(freq) {
 function showResults() {
   document.getElementById('quiz-area').style.display = 'none';
   document.getElementById('result-area').style.display = 'block';
+
   const resultList = document.getElementById('result-list');
   resultList.innerHTML = '';
+
   let correctCount = 0;
   for (let i = 0; i < totalQuestions; i++) {
+    const li = document.createElement('li');
     const isCorrect = userAnswers[i] === correctAnswers[i];
     if (isCorrect) correctCount++;
-    const li = document.createElement('li');
     li.innerText = `第${i + 1}問: あなたの答え → ${userAnswers[i]?.toUpperCase() ?? '-'} / 正解 → ${correctAnswers[i].toUpperCase()} ${isCorrect ? '✅' : '❌'}`;
     resultList.appendChild(li);
   }
+
   const percent = Math.round((correctCount / totalQuestions) * 100);
   document.getElementById('score-summary').innerText = `正解数：${correctCount} / ${totalQuestions}（正答率：${percent}%）`;
 }
