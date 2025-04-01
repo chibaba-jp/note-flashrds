@@ -66,7 +66,7 @@ function startVoiceRecognition() {
       analyser.getFloatTimeDomainData(buffer);
       const [pitch, clarity] = pitchy(buffer, audioContext.sampleRate);
 
-      if (clarity > 0.9 && pitch) {
+      if (clarity > 0.5 && pitch) {
         const note = freqToNoteName(pitch);
         document.getElementById('voice-detected').innerText = `あなたの音: ${note}`;
 
