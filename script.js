@@ -37,7 +37,7 @@ function showNextNote() {
   }
 
   const randomNote = notes[Math.floor(Math.random() * notes.length)];
-  correctAnswer = randomNote[0]; // ファイル名の最初の1文字
+  correctAnswer = randomNote[0]; // 'c4.png' → 'c'
   correctAnswers.push(correctAnswer);
 
   document.getElementById('note-image').src = 'notes/' + randomNote;
@@ -51,7 +51,7 @@ function selectAnswer(answer) {
   showNextNote();
 }
 
-// --- 音声回答モード（Pitchy） ---
+// 🎤 音声認識（clarity緩和・デバッグ表示あり）
 function startVoiceRecognition() {
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     const audioContext = new AudioContext();
@@ -66,14 +66,17 @@ function startVoiceRecognition() {
       analyser.getFloatTimeDomainData(buffer);
       const [pitch, clarity] = pitchy(buffer, audioContext.sampleRate);
 
-      if (clarity > 0.5 && pitch) {
+      if (pitch) {
         const note = freqToNoteName(pitch);
-        document.getElementById('voice-detected').innerText = `あなたの音: ${note}`;
+        const userNote = note.replace(/[0-9]/g, '').toLowerCase(); // オクターブ無視
+        document.getElementById('voice-detected').innerText =
+          `あなたの音: ${note} / clarity: ${clarity.toFixed(2)}`;
 
-        const userNote = note[0].toLowerCase();
-        userAnswers.push(userNote);
-        currentQuestion++;
-        showNextNote();
+        if (clarity > 0.6) {  // ゆるめ設定で反応しやすく
+          userAnswers.push(userNote);
+          currentQuestion++;
+          showNextNote();
+        }
       }
 
       if (currentQuestion < totalQuestions) {
@@ -85,7 +88,7 @@ function startVoiceRecognition() {
   });
 }
 
-// 周波数 → 音名（例：261Hz → C4）
+// 🎵 周波数 → 音名
 function freqToNoteName(freq) {
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const index = Math.round(12 * Math.log2(freq / 440)) + 69;
@@ -94,7 +97,7 @@ function freqToNoteName(freq) {
   return `${note}${octave}`;
 }
 
-// --- 結果表示 ---
+// ✅ 結果画面
 function showResults() {
   document.getElementById('quiz-area').style.display = 'none';
   document.getElementById('result-area').style.display = 'block';
