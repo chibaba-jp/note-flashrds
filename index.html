@@ -5,27 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>音符フラッシュカード</title>
   <link rel="stylesheet" href="style.css" />
-
-  <!-- ✅ pitchfinder をローカルから読み込む -->
   <script src="libs/pitchfinder.min.js"></script>
-
-  <!-- アプリのロジック -->
-  <script src="script.js"></script>
+  <script defer src="script.js"></script>
 </head>
 <body>
   <h1>🎵 音符フラッシュカード</h1>
   <button id="start-voice"><span>🎤</span> 音声で答える</button>
-  <div id="question-counter">1 / 5</div>
+  <div id="question-counter" style="margin: 1rem 0;">1 / 5</div>
   <div id="note-image-container">
-    <img id="note-image" src="notes/C.png" alt="音符" />
+    <img id="note-image" alt="音符" />
+    <div id="voice-detected" style="margin-top: 0.5rem;"></div>
   </div>
-  <div id="choices-container">
-    <!-- ボタンがJSで追加される -->
-  </div>
+  <div id="choices-container" style="display: none;"></div>
+
   <div id="result-container" style="display: none;">
     <h2>結果</h2>
     <ul id="result-list"></ul>
     <p id="accuracy"></p>
   </div>
+
+  <script>
+    // ✅ ここで startQuiz() を紐付ける
+    document.getElementById('start-voice').addEventListener('click', () => {
+      startQuiz();
+    });
+  </script>
 </body>
 </html>
