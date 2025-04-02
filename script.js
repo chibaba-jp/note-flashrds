@@ -1,33 +1,26 @@
-
-const notes = ['c4.png', 'd4.png', 'e4.png', 'f4.png', 'g4.png', 'a4.png', 'b4.png'];
-let totalQuestions = 0;
+const notes = ['A4.png', 'B4.png', 'C4.png', 'D4.png', 'E4.png', 'F4.png', 'G4.png'];
+let totalQuestions = 5;
 let currentQuestion = 0;
 let correctAnswers = [];
 let userAnswers = [];
-let isVoiceMode = false;
 let correctAnswer = '';
+let isVoiceMode = true;
 
 function startQuiz() {
-  totalQuestions = parseInt(document.getElementById('question-count').value);
   currentQuestion = 0;
   correctAnswers = [];
   userAnswers = [];
-  isVoiceMode = document.getElementById('voice-mode').checked;
 
-  document.getElementById('quiz-area').style.display = 'block';
-  document.querySelector('h2').style.display = 'none';
-  document.getElementById('question-count').style.display = 'none';
-  document.getElementById('voice-mode').style.display = 'none';
-  event.target.style.display = 'none';
-
-  if (!isVoiceMode) {
-    document.getElementById('choices').style.display = 'block';
-  }
+  document.getElementById('start-voice').style.display = 'none';
+  document.getElementById('choices-container').style.display = isVoiceMode ? 'none' : 'block';
+  document.getElementById('result-container').style.display = 'none';
 
   showNextNote();
 
   if (isVoiceMode) {
     startVoiceRecognition();
+  } else {
+    renderChoiceButtons();
   }
 }
 
@@ -38,10 +31,14 @@ function showNextNote() {
   }
 
   const randomNote = notes[Math.floor(Math.random() * notes.length)];
-  correctAnswer = randomNote[0];
+  correctAnswer = randomNote[0]; // e.g., 'A' from 'A4.png'
   correctAnswers.push(correctAnswer);
-  document.getElementById('note-image').src = 'notes/' + randomNote;
-  document.getElementById('progress-text').innerText = `${currentQuestion + 1} / ${totalQuestions}`;
+
+  const noteImage = document.getElementById('note-image');
+  noteImage.src = 'notes/' + randomNote;
+  noteImage.alt = '音符: ' + correctAnswer;
+
+  document.getElementById('question-counter').innerText = `${currentQuestion + 1} / ${totalQuestions}`;
   document.getElementById('voice-detected').innerText = '';
 }
 
@@ -51,9 +48,21 @@ function selectAnswer(answer) {
   showNextNote();
 }
 
+function renderChoiceButtons() {
+  const container = document.getElementById('choices-container');
+  container.innerHTML = '';
+
+  ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(note => {
+    const btn = document.createElement('button');
+    btn.innerText = note;
+    btn.addEventListener('click', () => selectAnswer(note));
+    container.appendChild(btn);
+  });
+}
+
 function startVoiceRecognition() {
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    const audioContext = new AudioContext();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
@@ -66,11 +75,10 @@ function startVoiceRecognition() {
       const pitch = detectPitch(buffer);
 
       if (pitch) {
-        const note = freqToNoteName(pitch);
-        const userNote = note.replace(/[0-9]/g, '').toLowerCase();
-        document.getElementById('voice-detected').innerText =
-          `あなたの音: ${note}`;
+        const note = freqToNoteName(pitch); // e.g., "A4"
+        const userNote = note.replace(/[0-9]/g, '').toUpperCase();
 
+        document.getElementById('voice-detected').innerText = `あなたの音: ${note}`;
         userAnswers.push(userNote);
         currentQuestion++;
         showNextNote();
@@ -82,6 +90,9 @@ function startVoiceRecognition() {
     }
 
     detect();
+  }).catch(err => {
+    alert('マイクの使用が許可されていません。音声認識モードを使用できません。');
+    console.error(err);
   });
 }
 
@@ -94,21 +105,20 @@ function freqToNoteName(freq) {
 }
 
 function showResults() {
-  document.getElementById('quiz-area').style.display = 'none';
-  document.getElementById('result-area').style.display = 'block';
-
+  document.getElementById('result-container').style.display = 'block';
   const resultList = document.getElementById('result-list');
   resultList.innerHTML = '';
 
   let correctCount = 0;
+
   for (let i = 0; i < totalQuestions; i++) {
     const li = document.createElement('li');
     const isCorrect = userAnswers[i] === correctAnswers[i];
     if (isCorrect) correctCount++;
-    li.innerText = `第${i + 1}問: あなたの答え → ${userAnswers[i]?.toUpperCase() ?? '-'} / 正解 → ${correctAnswers[i].toUpperCase()} ${isCorrect ? '✅' : '❌'}`;
+    li.textContent = `第${i + 1}問: あなたの答え → ${userAnswers[i] ?? '-'} / 正解 → ${correctAnswers[i]} ${isCorrect ? '✅' : '❌'}`;
     resultList.appendChild(li);
   }
 
   const percent = Math.round((correctCount / totalQuestions) * 100);
-  document.getElementById('score-summary').innerText = `正解数：${correctCount} / ${totalQuestions}（正答率：${percent}%）`;
+  document.getElementById('accuracy').textContent = `正解数：${correctCount} / ${totalQuestions}（正答率：${percent}%）`;
 }
